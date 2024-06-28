@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // ** add salt before saving
-userSchema.pre("save", addSalt);
+userSchema.pre("save", (next) => {
+  addSalt(this, next);
+});
 
 const User = mongoose.model("User", userSchema);
 

@@ -4,8 +4,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
-function addSalt(next) {
-  const user = this;
+function addSalt(user, next) {
 
   // ** check if password is modified
   if (!user.isModified("password")) return;
