@@ -40,7 +40,7 @@ const matchPassword = (user, password) => {
   return true;
 };
 
-const generateAuthToken = async (user) => {
+const generateAuthToken = async (user, isForgetPwd) => {
   console.log("generateAuthToken", user.id);
   const payload = {
     id: user.id,
@@ -49,9 +49,16 @@ const generateAuthToken = async (user) => {
   };
   console.log(payload);
 
+  let expTime = 0;
+  if (isForgetPwd) {
+    expTime = "2m";
+  } else {
+    expTime = "30m";
+  }
+
   // ** create a token with the payload and secret
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "30m",
+    expiresIn: expTime,
   });
   console.log(token);
 
@@ -60,4 +67,34 @@ const generateAuthToken = async (user) => {
   return token;
 }
 
-export { addSalt, matchPassword, generateAuthToken };
+const compareTokenAndUser = async (resetToken) => {
+  try {
+    const userFromToken = jwt.verify(token, process.env.JWT_SECRET);
+    if (!userFromToken) {
+      throw new Error("Invalid token");
+    }
+
+    const userFromDB = await User.findOne({ token: resetToken });
+    if (!userFromDB) {
+      throw new Error("Invalid token");
+    }
+
+    if (userFromDB.email !== userFromToken.email) {
+      throw new Error("Invalid token");
+    }
+
+    return {
+      success: true,
+      message: "Token and user match",
+      user: userFromDB,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: "Error while comparing token and user",
+      error: error.message,
+    }
+  }
+}
+
+export { addSalt, matchPassword, generateAuthToken, compareTokenAndUser };

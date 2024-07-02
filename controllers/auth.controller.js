@@ -1,5 +1,6 @@
 import User from "../models/User.js";
-import { matchPassword, generateAuthToken } from "../helpers/auth.helper.js";
+import { matchPassword, generateAuthToken, compareTokenAndUser } from "../helpers/auth.helper.js";
+import { sendForgetPwdMail } from "../helpers/email.helper.js";
 
 const signup = async (req, res) => {
   // ** input validations
@@ -71,8 +72,10 @@ const signin = async (req, res) => {
       throw new Error("Invalid password");
     }
 
+    const isForgetPwd = false;
+
     // ** generate a token
-    const token = await generateAuthToken(user);
+    const token = await generateAuthToken(user, isForgetPwd);
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24, // 1 days
@@ -110,4 +113,66 @@ const logout = async (req, res) => {
   }
 };
 
-export { signup, signin, logout };
+const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      throw new Error(`No such user found with this email ${email}`);
+    }
+    
+    const isForgetPwd = true;
+
+    // ** generate a token
+    const resetToken = await generateAuthToken(user, isForgetPwd);
+
+    // ** save the token in db
+    await User.updateOne({ _id: user.id }, { token: resetToken });
+
+    const resetURL = `${req.protocol}://${req.get('host')}/auth/resetpassword/${resetToken}`;
+
+    const isMailSent = await sendForgetPwdMail(email, resetURL);
+    if (!isMailSent.success) {
+      throw new Error(`Error while sending mail to ${email}`);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "A link has been sent to your email having validity of 2 minutes. Please click on the link to reset your password",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error while forgetting password",
+      error: error.message,
+    })
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const resetToken = req.params.resetToken;
+    const { newPassword } = req.body;
+
+    const isMatch = await compareTokenAndUser(resetToken);
+    if (!isMatch.success) {
+      throw new Error(isMatch.error);
+    }
+
+    const user = isMatch.user;
+    user.password = newPassword;
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error while resetting password",
+      error: error.message,
+    })
+  }
+}
+
+export { signup, signin, logout, forgetPassword, resetPassword };

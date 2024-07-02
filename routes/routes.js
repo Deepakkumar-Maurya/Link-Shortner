@@ -21,10 +21,14 @@ router.get("/", (req, res) => {
       "POST /auth/signup": "User registration",
       "POST /auth/signin": "User login",
       "GET /auth/logout": "User logout",
+      "POST /auth/forgetpassword": "Forget password",
+      "POST /auth/resetpassword/:resetToken": "Reset password",
       "GET /:shortUrl": "Redirect to original URL",
       "POST /url/short_url": "Create a shortened URL",
       "GET /url/getUrls": "Get all shortened URLs",
       "DELETE /url/deleteUrl": "Delete a shortened URL",
+      "GET /qr/generateQRCode": "Get QR code",
+      "GET /qr/deleteQRCode": "Delete QR code",
     },
   });
 });
