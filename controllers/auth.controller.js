@@ -5,16 +5,24 @@ import { sendForgetPwdMail } from "../helpers/email.helper.js";
 const signup = async (req, res) => {
   // ** input validations
   if (!req.body.username || !req.body.email || !req.body.password) {
-    throw new Error("Please fill all the fields");
+    const error = new Error("Please fill all the fields");
+    error.statusCode = 400;
+    throw error;
   }
   if (req.body.password.length < 4) {
-    throw new Error("Password must be at least 4 characters");
+    const error = new Error("Password must be at least 4 characters");
+    error.statusCode = 400;
+    throw error;
   }
   if (req.body.email.indexOf("@") === -1) {
-    throw new Error("Please enter a valid email");
+    const error = new Error("Please enter a valid email");
+    error.statusCode = 400;
+    throw error;
   }
   if (req.body.username.length < 3) {
-    throw new Error("Username must be at least 3 characters");
+    const error = new Error("Username must be at least 3 characters");
+    error.statusCode = 400;
+    throw error;
   }
 
   const { username, email, password } = req.body;
@@ -23,7 +31,9 @@ const signup = async (req, res) => {
     // ** check if user already exists
     const user = await User.findOne({ email: email });
     if (user) {
-      throw new Error("User already exists");
+      const error = new Error("User already exists");
+      error.statusCode = 409;
+      throw error;
     }
 
     // ** create a new user
@@ -40,7 +50,8 @@ const signup = async (req, res) => {
     });
   } catch (error) {
     console.log(error.message);
-    return res.status(400).json({
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
       success: false,
       message: "Error creating new user",
       error: error.message,
@@ -51,10 +62,14 @@ const signup = async (req, res) => {
 const signin = async (req, res) => {
   // ** input validations
   if (!req.body.email || !req.body.password) {
-    throw new Error("Please fill all the fields");
+    const error = new Error("Please fill all the fields");
+    error.statusCode = 400;
+    throw error;
   }
   if (req.body.email.indexOf("@") === -1) {
-    throw new Error("Please enter a valid email");
+    const error = new Error("Please enter a valid email");
+    error.statusCode = 400;
+    throw error;
   }
 
   const { email, password } = req.body;
@@ -63,13 +78,17 @@ const signin = async (req, res) => {
     // ** check if user exists
     const user = await User.findOne({ email: email });
     if (!user) {
-      throw new Error("No such user found");
+      const error = new Error("No such user found");
+      error.statusCode = 404;
+      throw error;
     }
 
     // ** match password
     const isMatch = matchPassword(user, password);
     if (!isMatch) {
-      throw new Error("Invalid password");
+      const error = new Error("Invalid password");
+      error.statusCode = 401;
+      throw error;
     }
 
     const isForgetPwd = false;
@@ -87,7 +106,8 @@ const signin = async (req, res) => {
     });
   } catch (error) {
     console.log(error.message);
-    return res.status(400).json({
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
       success: false,
       message: "Error while signing user",
       error: error.message,

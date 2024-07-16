@@ -29,7 +29,7 @@ const generateShortUrl = async (req, res) => {
             message: "Url shortened successfully",
         });
     } catch (error) {
-        return res.status(400).json({
+        return res.status(500).json({
             success: false,
             message: "Error shortening url",
             error: error.message,
@@ -43,7 +43,9 @@ const redirectToLongUrl = async (req, res) => {
         // ** find the url
         const url = await Url.findOne({ short_url: short_url });
         if (!url) {
-            throw new Error("No such url found");
+            const error = new Error("No such url found");
+            error.statusCode = 404;
+            throw error;
         }
         // ** update the visit history
         url.visitHistory.push({ timestamp: new Date() });
@@ -52,7 +54,8 @@ const redirectToLongUrl = async (req, res) => {
         // ** redirect to long url
         res.redirect(url.original_url);
     } catch (error) {
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error redirecting to long url",
             error: error.message,
@@ -66,7 +69,9 @@ const getUrls = async (req, res) => {
         // ** get urls
         const urls = await Url.find({ user: user_id });
         if (!urls) {
-            throw new Error("No urls found");
+            const error = new Error("No urls found");
+            error.statusCode = 404;
+            throw error;
         }
 
         return res.status(200).json({
@@ -75,7 +80,8 @@ const getUrls = async (req, res) => {
             urls: urls,
         });
     } catch (error) {
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error retrieving urls",
             error: error.message,
@@ -93,7 +99,9 @@ const deleteUrl = async (req, res) => {
             user: user,
         });
         if (!url) {
-            throw new Error("No such url found");
+            const error = new Error("No such url found");
+            error.statusCode = 404;
+            throw error;
         }
 
         return res.status(200).json({
@@ -101,7 +109,8 @@ const deleteUrl = async (req, res) => {
             message: "Url deleted successfully",
         });
     } catch (error) {
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error deleting url",
             error: error.message,

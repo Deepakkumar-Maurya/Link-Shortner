@@ -11,16 +11,21 @@ const isAuth = async (req, res, next) => {
         const user = jwt.verify(token, process.env.JWT_SECRET);
         const userFromDB = await User.findById(user.id);
         if (!userFromDB) {
-            throw new Error("User not found");
+            const error = new Error("User not found");
+            error.statusCode = 401;
+            throw error;
         }
         if (userFromDB.token !== token) {
-            throw new Error("Invalid token");
+            const error = new Error("Invalid token");
+            error.statusCode = 401;
+            throw error;
         }
         req.userId = user.id;
         next();
     } catch (error) {
         console.log(error.message);
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error in authentication",
             error: error.message,

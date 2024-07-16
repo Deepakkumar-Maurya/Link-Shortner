@@ -7,7 +7,9 @@ const generateQRCode = async (req, res) => {
         // ** find the url
         const url = await Url.findOne({ original_url: long_url });
         if (!url) {
-            throw new Error("No such url found");
+            const error = new Error("No such url found");
+            error.statusCode = 404;
+            throw error;
         }
 
         // ** generate QRCode
@@ -24,7 +26,8 @@ const generateQRCode = async (req, res) => {
         });
     } catch (error) {
         console.log(error.message);
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error generating QRCode",
             error: error.message,
@@ -39,7 +42,9 @@ const deleteQRCode = async (req, res) => {
         // ** find the url
         const url = await Url.findOne({ original_url: long_url, user: user });
         if (!url) {
-            throw new Error("No such url found");
+            const error = new Error("No such url found");
+            error.statusCode = 404;
+            throw error;
         }
 
         // ** delete the QRCode
@@ -52,7 +57,8 @@ const deleteQRCode = async (req, res) => {
         });
     } catch (error) {
         console.log(error.message);
-        return res.status(400).json({
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({
             success: false,
             message: "Error deleting QRCode",
             error: error.message,
