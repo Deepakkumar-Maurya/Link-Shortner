@@ -5,7 +5,9 @@ const isAuth = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || authHeader == null || authHeader === "") {
-            throw new Error("No token provided");
+            const error = new Error("No token provided");
+            error.statusCode = 401;
+            throw error;
         }
         const token = authHeader?.split(" ")[1];
         const user = jwt.verify(token, process.env.JWT_SECRET);
